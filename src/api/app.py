@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import time
 from pathlib import Path
 
 # Configuração da página
@@ -155,7 +156,10 @@ with st.form("simulador_form"):
     submit_button = st.form_submit_button("🧠 Processar Análise de Risco")
 
 if submit_button:
-    with st.spinner("Conectando ao motor de IA... processando milhares de árvores de decisão..."):
+    with st.status("🧠 Inicializando Motor de Inteligência Artificial...", expanded=True) as status:
+        st.write("🔍 Extraindo perfil e parâmetros do cliente...")
+        time.sleep(0.8)
+        
         # Preenchendo dados ocultos para bater com o formato treinado
         dados_dict = {
             "gender": gender,
@@ -181,12 +185,21 @@ if submit_button:
         
         df_input = pd.DataFrame([dados_dict])
         
+        st.write("⚙️ Aplicando Engenharia de Features (One-Hot Encoding)...")
+        time.sleep(0.8)
         categorical_cols = df_input.select_dtypes(include=['object', 'category', 'str']).columns.tolist()
         df_encoded = pd.get_dummies(df_input, columns=categorical_cols, dtype=int)
         df_final = df_encoded.reindex(columns=features_treinamento, fill_value=0)
         
+        st.write("⚡ Executando inferência preditiva com XGBoost...")
+        time.sleep(1.2)
         probabilidade = modelo.predict_proba(df_final)[0][1]
         classe = modelo.predict(df_final)[0]
+        
+        st.write("📊 Consolidando resultados estatísticos...")
+        time.sleep(0.5)
+        
+        status.update(label="Análise Concluída com Sucesso!", state="complete", expanded=False)
         
     st.markdown("---")
     st.markdown("### 🎯 Diagnóstico da Inteligência Artificial")
