@@ -1,0 +1,25 @@
+# 1. Ingestão & Armazenamento
+sqlalchemy
+psycopg2-binary  # Driver PostgreSQL
+# pyodbc        # Descomente se for usar SQL Server
+supabase
+
+# 2. Processamento & Validação
+pandas
+great-expectations
+
+# 3. Camada de IA
+scikit-learn
+xgboost
+langchain
+langchain-openai
+openai
+
+# 4. Entrega Analítica / API
+fastapi
+uvicorn[standard]
+streamlit
+
+# Testes e Utilitários
+pytest
+python-dotenv
