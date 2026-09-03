@@ -1,83 +1,110 @@
-import os
 import pandas as pd
+import sqlite3
 import joblib
 from pathlib import Path
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
+from imblearn.over_sampling import SMOTE
+import warnings
+warnings.filterwarnings('ignore')
+
+def get_db_connection():
+    db_path = Path("data/projeto_dados.db")
+    return sqlite3.connect(db_path)
+
+def create_features(df):
+    """Engenharia de features (Novas colunas derivadas)"""
+    df = df.copy()
+    
+    # 1. Total_Servicos_Contratados
+    servicos = ['PhoneService', 'MultipleLines', 'InternetService', 
+                'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 
+                'TechSupport', 'StreamingTV', 'StreamingMovies']
+    
+    def count_services(row):
+        count = 0
+        for s in servicos:
+            if str(row.get(s, 'No')) not in ['No', 'No internet service', 'No phone service']:
+                count += 1
+        return count
+        
+    df['Total_Servicos_Contratados'] = df.apply(count_services, axis=1)
+    
+    # 2. Gasto_Por_Mes_De_Vida (evitando divisão por zero)
+    df['Gasto_Por_Mes_De_Vida'] = df['TotalCharges'] / (df['tenure'] + 1)
+    
+    return df
 
 def train_model():
-    print("Iniciando Fase 3: Treinamento do Modelo IA...")
+    print("Iniciando treinamento da IA otimizada...")
     
-    # 1. Carregar Dados Limpos
-    processed_path = Path("data/processed/telco_churn_clean.csv")
-    if not processed_path.exists():
-        print(f"Erro: Arquivo {processed_path} não encontrado. Execute a Fase 2 primeiro.")
-        return
-        
-    df = pd.read_csv(processed_path)
-    print(f"Dados carregados. Shape: {df.shape}")
+    # 1. Carregar dados do banco de dados
+    conn = get_db_connection()
+    df = pd.read_sql("SELECT * FROM processed_telco_churn", conn)
+    conn.close()
     
-    # 2. Separar Features (X) e Target (y)
-    if "Churn" not in df.columns:
-        print("Erro: Coluna 'Churn' não encontrada.")
-        return
-        
-    y = df["Churn"]
-    X = df.drop(columns=["Churn"])
+    print(f"Dados carregados: {df.shape[0]} linhas e {df.shape[1]} colunas.")
     
-    # 3. One-Hot Encoding das variáveis categóricas
-    # Variáveis do tipo 'object' ou 'category' serão transformadas em colunas numéricas (0 ou 1)
+    # 2. Engenharia de Features
+    df = create_features(df)
+    
+    # 3. Separar X e Y
+    X = df.drop(columns=['Churn'])
+    y = df['Churn']
+    
+    # 4. One-Hot Encoding
     categorical_cols = X.select_dtypes(include=['object', 'category', 'str']).columns.tolist()
     print(f"Aplicando One-Hot Encoding nas colunas: {categorical_cols}")
+    X_encoded = pd.get_dummies(X, columns=categorical_cols, dtype=int)
     
-    # drop_first=True evita a armadilha de multicolinearidade
-    X_encoded = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
-    print(f"Shape do X após encoding: {X_encoded.shape}")
+    # Salvar a estrutura de features ANTES do treino, para a API usar
+    features = X_encoded.columns.tolist()
+    features_path = Path("models/model_features.pkl")
+    features_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(features, features_path)
     
-    # 4. Dividir em Treino e Teste (80% treino, 20% teste)
+    # 5. Dividir em Treino e Teste
     X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42, stratify=y)
-    print(f"Divisão de dados: {X_train.shape[0]} amostras de treino e {X_test.shape[0]} de teste.")
     
-    # 5. Treinar o modelo XGBoost
-    print("Treinando o XGBClassifier...")
-    model = XGBClassifier(
-        n_estimators=100, 
-        max_depth=5, 
-        learning_rate=0.1, 
-        random_state=42,
-        use_label_encoder=False,
-        eval_metric='logloss'
-    )
+    # 6. SMOTE (Balanceamento de Classes apenas no Treino)
+    print("Aplicando SMOTE para balanceamento de classes...")
+    smote = SMOTE(random_state=42)
+    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
     
-    model.fit(X_train, y_train)
-    print("Modelo treinado com sucesso!")
+    # 7. Modelagem e Hyperparameter Tuning com XGBoost
+    print("Iniciando GridSearchCV para hiperparâmetros do XGBoost...")
+    xgb = XGBClassifier(eval_metric='logloss', random_state=42)
     
-    # 6. Avaliação
-    print("Avaliando o modelo no conjunto de teste...")
-    y_pred = model.predict(X_test)
+    # Uma grade menor para não demorar demais
+    param_grid = {
+        'max_depth': [3, 5],
+        'learning_rate': [0.05, 0.1],
+        'n_estimators': [100, 200]
+    }
+    
+    grid_search = GridSearchCV(estimator=xgb, param_grid=param_grid, scoring='accuracy', cv=3, verbose=1, n_jobs=-1)
+    grid_search.fit(X_train_resampled, y_train_resampled)
+    
+    melhor_modelo = grid_search.best_estimator_
+    print(f"Melhores parâmetros encontrados: {grid_search.best_params_}")
+    
+    # 8. Avaliação
+    y_pred = melhor_modelo.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
-    print(f"Acurácia: {acc:.4f}\n")
-    print("Relatório de Classificação:")
+    
+    print("\n=== Resultados da Otimização ===")
+    print(f"Acurácia no Teste: {acc*100:.2f}%")
+    print("\nRelatório de Classificação Detalhado:")
     print(classification_report(y_test, y_pred))
     
-    # 7. Salvar Modelo e as colunas utilizadas (para a API saber a estrutura exata)
-    models_dir = Path("models")
-    models_dir.mkdir(exist_ok=True)
-    
-    model_path = models_dir / "xgb_churn_model.pkl"
-    features_path = models_dir / "model_features.pkl"
-    
-    joblib.dump(model, model_path)
-    joblib.dump(X_encoded.columns.tolist(), features_path)
-    
-    print(f"Modelo salvo em: {model_path}")
-    print(f"Lista de features salva em: {features_path}")
-    print("Fase 3 concluída com sucesso!")
+    # 9. Serializar o modelo final
+    model_path = Path("models/xgb_churn_model.pkl")
+    joblib.dump(melhor_modelo, model_path)
+    print(f"Modelo otimizado salvo com sucesso em: {model_path}")
 
 if __name__ == "__main__":
-    # Garante que o script está sendo rodado a partir da raiz do projeto
-    if not Path("data").exists():
-        print("AVISO: Execute este script a partir do diretório raiz do projeto.")
+    if not Path("data/projeto_dados.db").exists():
+        print("AVISO: Execute os scripts da Fase 1 e 2 antes do treinamento.")
     else:
         train_model()

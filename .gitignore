@@ -30,3 +30,9 @@ htmlcov/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Banco de Dados local
+data/projeto_dados.db
+
+# Evitar subir arquivos maciços no futuro
+*.csv

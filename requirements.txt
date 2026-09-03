@@ -23,3 +23,12 @@ streamlit
 # Testes e Utilitários
 pytest
 python-dotenv
+
+plotly
+imbalanced-learn
+
+fastapi
+uvicorn[standard]
+
+shap
+matplotlib
