@@ -125,7 +125,7 @@ def train_model():
     joblib.dump(melhor_modelo, model_path)
     
     with open("models/optimal_threshold.txt", "w") as f:
-        f.write(str(best_threshold))
+        f.write(str(float(best_threshold)))  # garante float puro, sem colchetes numpy
         
     print(f"Modelo e Limite Ótimo salvos com sucesso em: {model_path.parent}")
 

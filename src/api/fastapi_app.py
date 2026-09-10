@@ -63,7 +63,8 @@ else:
 threshold_path = Path("models/optimal_threshold.txt")
 if threshold_path.exists():
     with open(threshold_path, "r") as f:
-        optimal_threshold = float(f.read().strip())
+        raw = f.read().strip().strip('[]')  # remove espaços e colchetes de arrays numpy
+        optimal_threshold = float(raw)
 else:
     optimal_threshold = 0.5
 
