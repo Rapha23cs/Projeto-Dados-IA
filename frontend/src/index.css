@@ -1,9 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary: #8b5cf6;
+  --primary: #00f2fe; /* Azul Neon */
+  --primary-hover: #00c6ff;
+  --secondary: #e0f8ff; /* Branco Gelo */
   --bg-dark: #0b0f19;
   --card-bg: rgba(15, 23, 42, 0.7);
   --text-main: #f8fafc;

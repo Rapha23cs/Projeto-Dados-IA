@@ -248,10 +248,16 @@ function App() {
                       const maxImpact = Math.max(...result.top_contributors.map(i => Math.abs(i.impact)));
                       const widthPercent = (Math.abs(item.impact) / maxImpact) * 100;
                       
+                      let displayName = item.feature.replace(/_/g, ' ');
+                      displayName = displayName.replace('Custo Por Servico', 'Cost Per Service');
+                      displayName = displayName.replace('Total Servicos Contratados', 'Total Services');
+                      displayName = displayName.replace('Gasto Por Mes De Vida', 'Lifetime Monthly Spend');
+                      displayName = displayName.replace('Tenure Group', 'Tenure Group');
+
                       return (
                         <div key={idx} className="shap-bar-row">
                           <div className="shap-bar-label">
-                            <span style={{fontWeight: 500}}>{item.feature.replace(/_/g, ' ')}</span>
+                            <span style={{fontWeight: 500}}>{displayName}</span>
                             <span style={{color: isPositive ? 'var(--danger)' : 'var(--primary)', fontWeight: 700}}>
                               {isPositive ? "+" : ""}{(item.impact).toFixed(2)}
                             </span>

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
 import joblib
@@ -12,6 +13,15 @@ app = FastAPI(
     title="Churn Prediction API",
     description="API de MLOps para prever probabilidade de cancelamento de clientes (Churn) via XGBoost",
     version="1.0.0"
+)
+
+# Configurando CORS para o Frontend React
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Na vida real, restringiríamos aos domínios do site
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Definindo o esquema de entrada de dados com Pydantic
@@ -47,6 +57,14 @@ else:
     modelo = None
     features_treinamento = None
 
+# Tentar carregar o threshold otimizado, senão usa 0.5
+threshold_path = Path("models/optimal_threshold.txt")
+if threshold_path.exists():
+    with open(threshold_path, "r") as f:
+        optimal_threshold = float(f.read().strip())
+else:
+    optimal_threshold = 0.5
+
 def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     """Aplica as mesmas regras matemáticas do treino (Feature Engineering)"""
     df = df.copy()
@@ -63,6 +81,14 @@ def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
         
     df['Total_Servicos_Contratados'] = df.apply(count_services, axis=1)
     df['Gasto_Por_Mes_De_Vida'] = df['TotalCharges'] / (df['tenure'] + 1)
+    df['Custo_Por_Servico'] = df['MonthlyCharges'] / (df['Total_Servicos_Contratados'] + 1)
+    
+    def categorize_tenure(t):
+        if t <= 12: return 'Novato'
+        elif t <= 48: return 'Estavel'
+        else: return 'Leal'
+    df['Tenure_Group'] = df['tenure'].apply(categorize_tenure)
+    
     return df
 
 @app.get("/")
@@ -88,9 +114,9 @@ def predict_churn(client: ClientData):
         # 3. Alinhar com a estrutura treinada (garante que não falte nenhuma coluna)
         df_final = df_encoded.reindex(columns=features_treinamento, fill_value=0)
         
-        # 4. Predição
+        # 4. Predição com Threshold Dinâmico
         probabilidade = modelo.predict_proba(df_final)[0][1]
-        classe = int(modelo.predict(df_final)[0])
+        classe = 1 if probabilidade >= optimal_threshold else 0
         
         # 5. Explicação com SHAP (XAI)
         explainer = shap.TreeExplainer(modelo)
