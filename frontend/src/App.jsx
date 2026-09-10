@@ -103,10 +103,14 @@ function App() {
         body: JSON.stringify(formData)
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || "Erro desconhecido na API");
+      }
       setResult(data);
     } catch (error) {
-      console.error("Erro na predição:", error);
-      alert("Erro ao conectar com a IA. Verifique se o backend está rodando no porto 8000.");
+      console.error(error);
+      alert("Erro ao processar predição: " + error.message);
+      setResult(null);
     }
     setLoading(false);
   };
