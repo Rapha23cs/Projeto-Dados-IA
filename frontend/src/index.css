@@ -215,7 +215,7 @@ body {
 .btn-primary {
   grid-column: span 2;
   background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
-  color: white;
+  color: #020617; /* Contraste escuro para fundo claro/neon */
   border: none;
   border-radius: 10px;
   padding: 1.1rem 2rem;

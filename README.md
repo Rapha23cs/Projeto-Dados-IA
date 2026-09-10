@@ -1,99 +1,50 @@
-# 🔮 Previsão de Risco de Cancelamento (Churn) com Inteligência Artificial
+# 🧠 Churn Predictor SaaS
 
-![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
-![XGBoost](https://img.shields.io/badge/Model-XGBoost-orange.svg)
-![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-FF4B4B.svg)
-![Status](https://img.shields.io/badge/Status-Concluído-success.svg)
+Um motor de Inteligência Artificial de ponta-a-ponta para prever e evitar o cancelamento (Churn) de clientes de telecomunicações.
 
-Este é um projeto completo de Ciência de Dados e Machine Learning de ponta a ponta. O objetivo é prever com alta precisão se um cliente vai cancelar seus serviços (Churn) com base em seu perfil, histórico de faturamento e serviços contratados.
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![XGBoost](https://img.shields.io/badge/XGBoost-110000?style=for-the-badge&logo=xgboost&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
-O sistema conta com um pipeline robusto, cobrindo desde a extração automatizada de dados brutos até uma interface analítica moderna e interativa em **Streamlit**.
+## 🚀 Arquitetura do Sistema
 
----
+O projeto é dividido em um ambiente robusto de MLOps:
+1. **Frontend (React + Vite)**: Interface "Glassmorphism" construída com CSS puro, rodando suave na GPU, com design voltado a produtos SaaS Premium.
+2. **Backend (FastAPI)**: Microsserviço assíncrono para inferência de Machine Learning via API RESTful.
+3. **Machine Learning (XGBoost)**: Modelo Sênior otimizado matematicamente, utilizando `scale_pos_weight` para lidar com desbalanceamento, *Feature Engineering* de Safra e Valor, e Threshold Tuning (Corte Ótimo via Curva PR).
+4. **XAI (SHAP)**: Motor de Teoria dos Jogos acoplado ao FastAPI para não apenas entregar um Score de Risco, mas explicar matematicamente o *porquê* daquele risco.
 
-## 🏗️ Arquitetura do Pipeline (Ponta a Ponta)
+## 🛠️ Como Executar
 
-| Etapa | Responsabilidade | Ferramentas Utilizadas |
-| :--- | :--- | :--- |
-| **1. Ingestão & Armazenamento** (`src/ingestion`) | Download automático do dataset da IBM e persistência estruturada no banco de dados. | Pandas, SQLAlchemy, SQLite (Fallback) / PostgreSQL |
-| **2. Processamento & Validação** (`src/validation`) | Limpeza profunda, transformação de tipos e testes de qualidade de dados. | Pandas, Great Expectations |
-| **3. Camada de IA / Modelagem** (`src/model`) | Engenharia de Features (One-Hot Encoding), separação Treino/Teste e Treinamento Estatístico. | Scikit-Learn, XGBoost, Joblib |
-| **4. Entrega Analítica** (`src/api`) | Dashboard web premium, escuro e responsivo para inferência de risco em tempo real. | Streamlit |
-
----
-
-## 📂 Estrutura de Diretórios
-
-```text
-projeto_dados_ia/
-├── data/
-│   ├── raw/                 # Cópia intocável do dataset original (telco_churn_raw.csv)
-│   ├── processed/           # Dados limpos e preparados para a IA (telco_churn_clean.csv)
-│   └── projeto_dados.db     # Banco de Dados relacional local (SQLite)
-├── models/
-│   ├── xgb_churn_model.pkl  # Cérebro do projeto (Modelo XGBoost treinado)
-│   └── model_features.pkl   # Estrutura exata das colunas (para engenharia reversa)
-├── sql/
-│   ├── ddl/                 # Schemas e criação de tabelas
-│   └── queries/             # Views e consultas analíticas
-├── src/
-│   ├── ingestion/
-│   │   └── extract.py       # Extrai e carrega no DB (Etapa 1)
-│   ├── validation/
-│   │   └── clean_data.py    # Limpa e valida com Great Expectations (Etapa 2)
-│   ├── model/
-│   │   └── train.py         # Treina a Inteligência Artificial (Etapa 3)
-│   └── api/
-│       └── app.py           # Dashboard Front-End Streamlit (Etapa 4)
-├── tests/                   # Testes unitários do pipeline
-├── config/
-│   └── .env.example         # Variáveis de ambiente de Banco de Dados / API Keys
-├── requirements.txt         # Lista oficial de dependências do projeto
-└── README.md                # Documentação atual
-```
-
----
-
-## 🚀 Como Executar o Projeto Localmente
-
-### 1. Configuração do Ambiente Virtual
-Crie o ambiente virtual e ative-o no seu terminal:
+### 1. Iniciar o Backend (API)
 ```bash
+# Na pasta raiz
 python -m venv venv
-.\venv\Scripts\Activate.ps1   # No Windows (PowerShell)
-# ou
-source venv/bin/activate      # No Mac/Linux
-```
-
-### 2. Instalação das Dependências
-```bash
+.\venv\Scripts\activate  # (Windows)
 pip install -r requirements.txt
+uvicorn src.api.fastapi_app:app --host 0.0.0.0 --port 8000
 ```
+> A API ficará disponível em: http://localhost:8000/docs
 
-### 3. Rodando o Pipeline Completo
-Se você quiser recriar tudo do zero, execute os scripts em ordem a partir da pasta raiz do projeto:
+### 2. Iniciar o Frontend (UI)
+```bash
+# Em um novo terminal
+cd frontend
+npm install
+npm run dev
+```
+> Acesse: http://localhost:5173
 
-1. **Baixar Dados e Salvar no Banco:**
-   ```bash
-   python src/ingestion/extract.py
-   ```
-2. **Limpar Dados e Testar Qualidade:**
-   ```bash
-   python src/validation/clean_data.py
-   ```
-3. **Treinar o Modelo XGBoost (IA):**
-   ```bash
-   python src/model/train.py
-   ```
-4. **Abrir a Interface Web (Dashboard):**
-   ```bash
-   streamlit run src/api/app.py
-   ```
+## 📊 Performance do Modelo (Fase 10)
 
-A interface visual abrirá automaticamente no seu navegador no endereço: `http://localhost:8501`.
+- **Acurácia Estável**: ~78%
+- **Recall da Classe de Risco (Churn)**: **75%** (Identifica 3 em cada 4 clientes em fuga).
+- **Threshold Otimizado**: 57.56% (Maximiza o lucro do negócio, F1-Score).
 
----
-
-## 🏆 Resultados Obtidos
-
-O modelo `XGBClassifier` alcançou uma acurácia de base superior a **80.2%** logo no primeiro treinamento rápido, mostrando excelente precisão em reter (prever quem **não** vai sair), com capacidade gigantesca de encontrar as "bandeiras vermelhas" (red flags) ocultas que humanos normalmente ignorariam.
+## 🐋 Executando via Docker
+O projeto conta com conteinerização pronta para uso em produção.
+```bash
+docker build -t churn-api .
+docker run -p 8000:8000 churn-api
+```
