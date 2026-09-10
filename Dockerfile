@@ -1,5 +1,5 @@
 # Estágio 1: Build do Frontend (Node.js)
-FROM node:18-alpine AS frontend-builder
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 # Copiar arquivos de configuração do Node
 COPY frontend/package*.json ./
