@@ -106,7 +106,7 @@ def predict_churn(client: ClientData):
         df_fe = apply_feature_engineering(df_input)
         
         # 2. One-Hot Encoding
-        categorical_cols = df_fe.select_dtypes(include=['object', 'category', 'str']).columns.tolist()
+        categorical_cols = df_fe.select_dtypes(include=['object', 'category']).columns.tolist()
         df_encoded = pd.get_dummies(df_fe, columns=categorical_cols, dtype=int)
         
         # 3. Alinhar com a estrutura treinada (garante que não falte nenhuma coluna)
