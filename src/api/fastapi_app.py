@@ -61,12 +61,18 @@ else:
 
 # Tentar carregar o threshold otimizado, senão usa 0.5
 threshold_path = Path("models/optimal_threshold.txt")
-if threshold_path.exists():
-    with open(threshold_path, "r") as f:
-        raw = f.read().strip().strip('[]')  # remove espaços e colchetes de arrays numpy
-        optimal_threshold = float(raw)
-else:
+try:
+    if threshold_path.exists():
+        raw = threshold_path.read_text().strip()
+        # Remove qualquer caracter não numérico (colchetes, espaços) que o numpy possa gerar
+        import re
+        nums = re.findall(r'[0-9]+\.?[0-9]*[eE]?[-+]?[0-9]*', raw)
+        optimal_threshold = float(nums[0]) if nums else 0.5
+    else:
+        optimal_threshold = 0.5
+except Exception:
     optimal_threshold = 0.5
+print(f"Threshold carregado: {optimal_threshold}")
 
 def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     """Aplica as mesmas regras matemáticas do treino (Feature Engineering)"""
