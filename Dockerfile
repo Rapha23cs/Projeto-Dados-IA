@@ -1,4 +1,14 @@
-# Usar uma imagem oficial e leve do Python
+# Estágio 1: Build do Frontend (Node.js)
+FROM node:18-alpine AS frontend-builder
+WORKDIR /app/frontend
+# Copiar arquivos de configuração do Node
+COPY frontend/package*.json ./
+RUN npm install
+# Copiar o código fonte do frontend e buildar
+COPY frontend/ ./
+RUN npm run build
+
+# Estágio 2: Backend e Produção (Python)
 FROM python:3.10-slim
 
 # Define o diretório de trabalho dentro do container
@@ -15,9 +25,11 @@ COPY requirements.txt .
 # Instalar as bibliotecas Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo o código fonte para dentro do container
-# (O .dockerignore vai impedir que arquivos pesados/db entrem aqui)
+# Copiar todo o código fonte do backend para dentro do container
 COPY . .
+
+# Copiar o Frontend compilado (Estágio 1) para a pasta onde o FastAPI espera encontrar
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # Expor a porta 8000 para a API (FastAPI)
 EXPOSE 8000

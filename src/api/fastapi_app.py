@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import pandas as pd
 import joblib
@@ -91,10 +93,6 @@ def apply_feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-@app.get("/")
-def home():
-    return {"status": "ok", "message": "Churn Prediction API está online! Acesse /docs para testar."}
-
 @app.post("/predict")
 def predict_churn(client: ClientData):
     if modelo is None:
@@ -142,3 +140,8 @@ def predict_churn(client: ClientData):
         
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao processar predição: {str(e)}")
+
+# Tenta hospedar o site (Frontend React) se a pasta compilada existir (Monólito)
+frontend_dist = Path("frontend/dist")
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
