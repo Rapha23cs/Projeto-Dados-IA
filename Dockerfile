@@ -31,8 +31,11 @@ COPY . .
 # Copiar o Frontend compilado (Estágio 1) para a pasta onde o FastAPI espera encontrar
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-# Expor a porta 8000 para a API (FastAPI)
-EXPOSE 8000
+# Dar permissão de leitura para todos os usuários (Hugging Face roda como user 1000)
+RUN chmod -R 777 /app
 
-# Comando padrão ao rodar o container (Inicializar a API do FastAPI)
-CMD ["uvicorn", "src.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expor a porta 7860 (Padrão exigido pelo Hugging Face Spaces)
+EXPOSE 7860
+
+# Comando padrão ao rodar o container
+CMD ["uvicorn", "src.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "7860"]
