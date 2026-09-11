@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import pandas as pd
 import joblib
 from pathlib import Path
 import warnings
 import shap
+import os
+from supabase import create_client, Client
 warnings.filterwarnings('ignore')
 
 # Inicializando a API
@@ -25,6 +25,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Inicializando Supabase (se as chaves estiverem configuradas no ambiente)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+supabase: Client | None = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("Conectado ao Supabase com sucesso!")
+    except Exception as e:
+        print(f"Aviso: Erro ao conectar no Supabase: {e}")
 
 # Definindo o esquema de entrada de dados com Pydantic
 class ClientData(BaseModel):
@@ -143,12 +154,23 @@ def predict_churn(client: ClientData):
             "top_contributors": feature_importance
         }
         
+        # Salvar no Supabase (se estiver configurado)
+        if supabase:
+            try:
+                # Opcional: Adicionar identificação do cliente se vier na request
+                db_data = {
+                    "probability": resultado["churn_probability"],
+                    "churn_class": resultado["churn_class"],
+                    "risk_level": resultado["risk_level"],
+                    "top_factors": resultado["top_contributors"],
+                    "client_data": client.model_dump()
+                }
+                supabase.table("churn_predictions").insert(db_data).execute()
+                print("Predição salva no Supabase com sucesso!")
+            except Exception as db_err:
+                print(f"Aviso: Erro ao salvar log no Supabase: {db_err}")
+        
         return resultado
         
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao processar predição: {str(e)}")
-
-# Tenta hospedar o site (Frontend React) se a pasta compilada existir (Monólito)
-frontend_dist = Path("frontend/dist")
-if frontend_dist.exists():
-    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
