@@ -1,38 +1,53 @@
-# Ambientes Virtuais
+ï»¿# Ambientes Virtuais
 venv/
 env/
-.env
 .venv/
+
+# Variaveis de Ambiente (nunca subir para o GitHub!)
+.env
+.env.local
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*dollar*py.class
 *.so
+*.egg
+*.egg-info/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Logs
+# Logs e Cache
 logs/
 *.log
-
-# pytest
 .pytest_cache/
 htmlcov/
 .coverage
 .tox/
 
-# VS Code / IDEs
+# IDEs e Editores
 .vscode/
 .idea/
+*.swp
 
-# OS files
+# OS Files
 .DS_Store
 Thumbs.db
 
-# Banco de Dados local
+# Dados locais (NUNCA subir banco de dados nem dados brutos)
 data/projeto_dados.db
+data/raw/
+data/processed/
+*.db
 
-# Evitar subir arquivos maciços no futuro
+# Arquivos grandes (CSVs de dados brutos)
 *.csv
+
+# Frontend - Node.js
+frontend/node_modules/
+frontend/dist/
+
+# Scripts temporarios de debug/teste
+test_script.py
+scratch*.py
