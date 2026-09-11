@@ -34,8 +34,8 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # Dar permissão de leitura para todos os usuários (Hugging Face roda como user 1000)
 RUN chmod -R 777 /app
 
-# Expor a porta 7860 (Padrão exigido pelo Hugging Face Spaces)
-EXPOSE 7860
+# Expor a porta 8000 (Fallback)
+EXPOSE 8000
 
-# Comando padrão ao rodar o container
-CMD ["uvicorn", "src.api.fastapi_app:app", "--host", "0.0.0.0", "--port", "7860"]
+# Comando padrão ao rodar o container (Lê a porta dinâmica do provedor de nuvem, senão usa 8000)
+CMD ["sh", "-c", "uvicorn src.api.fastapi_app:app --host 0.0.0.0 --port ${PORT:-8000}"]
