@@ -139,6 +139,22 @@ def predict_churn(client: ClientData):
         classe = 1 if probabilidade >= optimal_threshold else 0
         
         # 5. Explicação com SHAP (XAI)
+        # Workaround para um bug conhecido entre SHAP e as versões mais recentes do XGBoost
+        # onde o XGBoost salva o `base_score` como uma string NumPy (ex: "[5E-1]"), o que quebra o parser do SHAP.
+        booster = modelo.get_booster()
+        original_save_config = booster.save_config
+        def custom_save_config():
+            import json, re
+            config = json.loads(original_save_config())
+            if "learner_model_param" in config.get("learner", {}):
+                base_score = config["learner"]["learner_model_param"].get("base_score")
+                if base_score and isinstance(base_score, str) and base_score.startswith("["):
+                    nums = re.findall(r'[0-9]+\.?[0-9]*[eE]?[-+]?[0-9]*', base_score)
+                    if nums:
+                        config["learner"]["learner_model_param"]["base_score"] = str(float(nums[0]))
+            return json.dumps(config)
+        booster.save_config = custom_save_config
+        
         explainer = shap.TreeExplainer(modelo)
         shap_values = explainer.shap_values(df_final)
         
