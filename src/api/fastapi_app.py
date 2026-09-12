@@ -130,8 +130,12 @@ def predict_churn(client: ClientData):
         # 3. Alinhar com a estrutura treinada (garante que não falte nenhuma coluna)
         df_final = df_encoded.reindex(columns=features_treinamento, fill_value=0)
         
+        # CRÍTICO: Garantir que todas as colunas são float64 puro
+        # O XGBoost/SHAP rejeitam qualquer tipo string ou object, independente da versão
+        df_final = df_final.astype('float64')
+        
         # 4. Predição com Threshold Dinâmico
-        probabilidade = modelo.predict_proba(df_final)[0][1]
+        probabilidade = float(modelo.predict_proba(df_final)[0][1])
         classe = 1 if probabilidade >= optimal_threshold else 0
         
         # 5. Explicação com SHAP (XAI)
