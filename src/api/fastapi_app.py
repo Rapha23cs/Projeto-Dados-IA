@@ -177,4 +177,6 @@ def predict_churn(client: ClientData):
         return resultado
         
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao processar predição: {str(e)}")
+        import traceback
+        tb = traceback.format_exc()
+        raise HTTPException(status_code=400, detail=f"Erro ao processar predição: {str(e)}\n\nTraceback:\n{tb}")
