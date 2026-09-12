@@ -243,39 +243,42 @@ function App() {
                 </div>
               )}
 
-              {/* Justificativa SHAP - Gráfico de Barras Moderno */}
+              {/* Justificativa XAI - Gráfico de Barras Moderno */}
               {result.top_contributors && (
                 <div className="shap-container">
                   <h4 style={{marginBottom: "1.5rem", color: "var(--text-muted)", textAlign: "center"}}>Fatores Decisivos (XAI)</h4>
                   <div className="shap-chart">
-                    {result.top_contributors.map((item, idx) => {
-                      const isPositive = item.impact > 0;
-                      const maxImpact = Math.max(...result.top_contributors.map(i => Math.abs(i.impact)));
-                      const widthPercent = (Math.abs(item.impact) / maxImpact) * 100;
-                      
-                      let displayName = item.feature.replace(/_/g, ' ');
-                      displayName = displayName.replace('Custo Por Servico', 'Cost Per Service');
-                      displayName = displayName.replace('Total Servicos Contratados', 'Total Services');
-                      displayName = displayName.replace('Gasto Por Mes De Vida', 'Lifetime Monthly Spend');
-                      displayName = displayName.replace('Tenure Group', 'Tenure Group');
+                    {(() => {
+                      const totalImpact = result.top_contributors.reduce((sum, i) => sum + Math.abs(i.impact), 0);
+                      return result.top_contributors.map((item, idx) => {
+                        const isPositive = item.impact > 0;
+                        const widthPercent = (Math.abs(item.impact) / totalImpact) * 100;
+                        const displayValue = widthPercent.toFixed(1);
+                        
+                        let displayName = item.feature.replace(/_/g, ' ');
+                        displayName = displayName.replace('Custo Por Servico', 'Cost Per Service');
+                        displayName = displayName.replace('Total Servicos Contratados', 'Total Services');
+                        displayName = displayName.replace('Gasto Por Mes De Vida', 'Lifetime Monthly Spend');
+                        displayName = displayName.replace('Tenure Group', 'Tenure Group');
 
-                      return (
-                        <div key={idx} className="shap-bar-row">
-                          <div className="shap-bar-label">
-                            <span style={{fontWeight: 500}}>{displayName}</span>
-                            <span style={{color: isPositive ? 'var(--danger)' : 'var(--primary)', fontWeight: 700}}>
-                              {isPositive ? "+" : ""}{(item.impact).toFixed(2)}
-                            </span>
+                        return (
+                          <div key={idx} className="shap-bar-row">
+                            <div className="shap-bar-label">
+                              <span style={{fontWeight: 500}}>{displayName}</span>
+                              <span style={{color: isPositive ? 'var(--danger)' : 'var(--primary)', fontWeight: 700}}>
+                                {isPositive ? "+" : "-"}{displayValue}%
+                              </span>
+                            </div>
+                            <div className="shap-bar-track">
+                              <div 
+                                className={`shap-bar-fill ${isPositive ? 'bg-danger' : 'bg-primary'}`} 
+                                style={{ "--target-width": `${widthPercent}%` }}
+                              ></div>
+                            </div>
                           </div>
-                          <div className="shap-bar-track">
-                            <div 
-                              className={`shap-bar-fill ${isPositive ? 'bg-danger' : 'bg-primary'}`} 
-                              style={{ "--target-width": `${widthPercent}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}
