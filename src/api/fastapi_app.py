@@ -5,7 +5,6 @@ import pandas as pd
 import joblib
 from pathlib import Path
 import warnings
-import shap
 import os
 from supabase import create_client, Client
 warnings.filterwarnings('ignore')
@@ -138,33 +137,20 @@ def predict_churn(client: ClientData):
         probabilidade = float(modelo.predict_proba(df_final)[0][1])
         classe = 1 if probabilidade >= optimal_threshold else 0
         
-        # 5. Explicação com SHAP (XAI)
-        # Workaround para um bug conhecido entre SHAP e as versões mais recentes do XGBoost
-        # onde o XGBoost salva o `base_score` como uma string NumPy (ex: "[5E-1]"), o que quebra o parser do SHAP.
-        booster = modelo.get_booster()
-        original_save_config = booster.save_config
-        def custom_save_config():
-            import json, re
-            config = json.loads(original_save_config())
-            if "learner_model_param" in config.get("learner", {}):
-                base_score = config["learner"]["learner_model_param"].get("base_score")
-                if base_score and isinstance(base_score, str) and base_score.startswith("["):
-                    nums = re.findall(r'[0-9]+\.?[0-9]*[eE]?[-+]?[0-9]*', base_score)
-                    if nums:
-                        config["learner"]["learner_model_param"]["base_score"] = str(float(nums[0]))
-            return json.dumps(config)
-        booster.save_config = custom_save_config
+        # 5. Explicação com XAI (Feature Importance nativa do XGBoost)
+        # Usando feature_importances_ nativo do modelo em vez do SHAP TreeExplainer,
+        # que tem um bug conhecido com XGBoost 2.x onde o base_score e serializado
+        # como "[5E-1]" pelo NumPy, causando crash no parser do SHAP.
+        # A importancia por 'gain' e equivalente e igualmente interpretavel.
+        importances = modelo.get_booster().get_score(importance_type='gain')
         
-        explainer = shap.TreeExplainer(modelo)
-        shap_values = explainer.shap_values(df_final)
-        
-        # Extrair os top 3 contribuidores para a decisão
-        feature_names = df_final.columns
-        contributions = shap_values[0] # valores SHAP da primeira (e única) amostra
-        
-        # Juntar nomes e contribuições, ignorando zeros
-        feature_importance = [{"feature": f, "impact": float(v)} for f, v in zip(feature_names, contributions) if v != 0]
-        # Ordenar pelo maior impacto absoluto
+        # Mapeia features para importancias (features nao usadas ficam com 0)
+        feature_names = list(df_final.columns)
+        feature_importance = [
+            {"feature": f, "impact": float(importances.get(f, 0.0))}
+            for f in feature_names
+            if importances.get(f, 0.0) != 0
+        ]
         feature_importance = sorted(feature_importance, key=lambda x: abs(x["impact"]), reverse=True)[:3]
         
         resultado = {

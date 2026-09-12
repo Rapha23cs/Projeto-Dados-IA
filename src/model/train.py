@@ -82,7 +82,9 @@ def train_model():
     
     # 7. Modelagem e Hyperparameter Tuning com XGBoost
     print("Iniciando GridSearchCV para hiperparâmetros do XGBoost...")
-    xgb = XGBClassifier(eval_metric='logloss', random_state=42, scale_pos_weight=pos_weight)
+    # base_score=0.5 como float Python puro para evitar bug de serialização
+    # NumPy com SHAP (onde [5E-1] nao pode ser convertido para float)
+    xgb = XGBClassifier(eval_metric='logloss', random_state=42, scale_pos_weight=pos_weight, base_score=float(0.5))
     
     # Grade expandida para melhor generalização
     param_grid = {
