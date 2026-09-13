@@ -137,19 +137,19 @@ def predict_churn(client: ClientData):
         probabilidade = float(modelo.predict_proba(df_final)[0][1])
         classe = 1 if probabilidade >= optimal_threshold else 0
         
-        # 5. Explicação com XAI (Feature Importance nativa do XGBoost)
-        # Usando feature_importances_ nativo do modelo em vez do SHAP TreeExplainer,
-        # que tem um bug conhecido com XGBoost 2.x onde o base_score e serializado
-        # como "[5E-1]" pelo NumPy, causando crash no parser do SHAP.
-        # A importancia por 'gain' e equivalente e igualmente interpretavel.
-        importances = modelo.get_booster().get_score(importance_type='gain')
+        # 5. Explicação Direcional (XAI) com Valores SHAP Nativos
+        # O XGBoost possui calculo nativo de SHAP (pred_contribs=True)
+        # que escapa do bug '[5E-1]' e nos dá direções reais (aumenta ou reduz o risco).
+        import xgboost as xgb
+        dmatrix = xgb.DMatrix(df_final)
+        contribs = modelo.get_booster().predict(dmatrix, pred_contribs=True)[0]
         
-        # Mapeia features para importancias (features nao usadas ficam com 0)
         feature_names = list(df_final.columns)
+        # O ultimo valor do array de contribs é o valor esperado (bias), ignoramos ele
         feature_importance = [
-            {"feature": f, "impact": float(importances.get(f, 0.0))}
-            for f in feature_names
-            if importances.get(f, 0.0) != 0
+            {"feature": f, "impact": float(c)}
+            for f, c in zip(feature_names, contribs[:-1])
+            if c != 0
         ]
         feature_importance = sorted(feature_importance, key=lambda x: abs(x["impact"]), reverse=True)[:3]
         

@@ -265,13 +265,13 @@ function App() {
                           <div key={idx} className="shap-bar-row">
                             <div className="shap-bar-label">
                               <span style={{fontWeight: 500}}>{displayName}</span>
-                              <span style={{color: isPositive ? 'var(--danger)' : 'var(--primary)', fontWeight: 700}}>
+                              <span style={{color: isPositive ? 'var(--danger)' : 'var(--success)', fontWeight: 700}}>
                                 {isPositive ? "+" : "-"}{displayValue}%
                               </span>
                             </div>
                             <div className="shap-bar-track">
                               <div 
-                                className={`shap-bar-fill ${isPositive ? 'bg-danger' : 'bg-primary'}`} 
+                                className={`shap-bar-fill ${isPositive ? 'bg-danger' : 'bg-success'}`} 
                                 style={{ "--target-width": `${widthPercent}%` }}
                               ></div>
                             </div>
