@@ -31,7 +31,6 @@ pip install -r requirements.txt
 
 uvicorn src.api.fastapi_app:app --host 0.0.0.0 --port 8000
 ```
-> A API ficará disponível em: http://localhost:8000/docs
 
 ### 2. Iniciar o Frontend (UI)
 ```bash
@@ -44,7 +43,6 @@ npm install
 
 npm run dev
 ```
-> Acesse: http://localhost:5173
 
 ## 📊 Performance do Modelo
 
